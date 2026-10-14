@@ -44,8 +44,8 @@ describe("mcp", () => {
   it("lists the tools", async () => {
     const res = await handleMcpRequest(rpc({ jsonrpc: "2.0", id: 2, method: "tools/list" }));
     const names = (await res.json()).result.tools.map((t: { name: string }) => t.name);
-    expect(names).toEqual(["execute_command", "get_job", "cancel_job", "read_file", "write_file"]);
-    expect(TOOLS).toHaveLength(5);
+    expect(names).toEqual(["execute_command", "get_job", "cancel_job"]);
+    expect(TOOLS).toHaveLength(3);
   });
 
   it("returns 202 without a body for notifications", async () => {
@@ -110,7 +110,7 @@ describe("mcp", () => {
   });
 
   it("returns JSON-RPC errors for invalid tool arguments and unknown tools", async () => {
-    const bad = await handleMcpRequest(rpc(call("read_file", { path: 1 })), upstream({}));
+    const bad = await handleMcpRequest(rpc(call("execute_command", { command: 1 })), upstream({}));
     expect((await bad.json()).error.code).toBe(-32602);
     const unknown = await handleMcpRequest(rpc(call("nope", {})), upstream({}));
     expect((await unknown.json()).error.message).toBe("Unknown tool: nope");

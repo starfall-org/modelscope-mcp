@@ -67,44 +67,6 @@ export const TOOLS = [
       additionalProperties: false,
     },
   },
-  {
-    name: "read_file",
-    description:
-      "Read an inclusive line range from a UTF-8 text file.\n\n" +
-      "Line numbers are 1-based. If end_line is omitted, read through EOF.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string" },
-        start_line: { type: "integer", default: 1 },
-        end_line: { type: "integer" },
-      },
-      required: ["path"],
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "write_file",
-    description:
-      "Insert content or replace an inclusive range in a UTF-8 text file.\n\n" +
-      "Insert is the default mode. Without start_line, insert appends to EOF; " +
-      "otherwise it inserts before start_line. Insert mode does not use " +
-      "end_line.\n\nReplace mode overwrites the whole file when no range is " +
-      "provided. With only start_line, it replaces from that line through EOF. " +
-      "With both line parameters, it replaces the inclusive range.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string" },
-        content: { type: "string" },
-        mode: { type: "string", enum: ["insert", "replace"], default: "insert" },
-        start_line: { type: "integer" },
-        end_line: { type: "integer" },
-      },
-      required: ["path", "content"],
-      additionalProperties: false,
-    },
-  },
 ];
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -250,32 +212,6 @@ async function toolCall(name: string, args: unknown, apiUrl: string | null, fetc
   } else if (name === "cancel_job") {
     const jobId = requiredString(args, "job_id");
     text = await sendAction("cancel_job", { job_id: jobId }, apiUrl, fetchImpl);
-  } else if (name === "read_file") {
-    const path = requiredString(args, "path");
-    const startLine = "start_line" in args ? args.start_line : 1;
-    if (!isInt(startLine)) throw new InvalidParams("start_line must be an integer");
-    const endLine = optionalInt(args, "end_line");
-    text = await sendAction(
-      "read_file",
-      { path, start_line: startLine, end_line: endLine },
-      apiUrl,
-      fetchImpl,
-    );
-  } else if (name === "write_file") {
-    const path = requiredString(args, "path");
-    const content = requiredString(args, "content");
-    const mode = "mode" in args ? args.mode : "insert";
-    if (mode !== "insert" && mode !== "replace") {
-      throw new InvalidParams("mode must be 'insert' or 'replace'");
-    }
-    const startLine = optionalInt(args, "start_line");
-    const endLine = optionalInt(args, "end_line");
-    text = await sendAction(
-      "write_file",
-      { path, content, mode, start_line: startLine, end_line: endLine },
-      apiUrl,
-      fetchImpl,
-    );
   } else {
     throw new UnknownTool(name);
   }
